@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Grass Shader · Three.js</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="demo.css">
+  <script type="importmap">
+  {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}
+  </script>
+</head>
+<body>
+  <main>
+    <section id="preview" aria-label="Interactive grass preview">
+      <div class="preview-top"><span class="eyebrow">THREE.JS / GRASS STUDY</span><div class="view-switch"><button id="perspective" aria-pressed="false">Perspective</button><button id="isometric" aria-pressed="true">Isometric</button></div></div>
+      <div id="loading" role="status">Loading the meadow…</div>
+      <div class="preview-bottom"><span id="stats">Preparing grass</span><span id="camera-help">Scroll to zoom · drag to pan</span></div>
+    </section>
+    <aside>
+      <header><span class="eyebrow">GRASS SHADER PLAYGROUND</span><h1>Make a meadow.</h1><p>Compare two ways to grow grass. Find what works for your game.</p></header>
+      <fieldset id="settings" disabled>
+        <section><h2>Grass method</h2><div class="mode-switch"><button id="mode-cards" type="button" aria-pressed="true">Painted cards</button><button id="mode-blades" type="button" aria-pressed="false">Geometric blades</button></div><p class="hint" id="method-description"></p></section>
+        <section id="card-shapes"><div class="section-title"><h2>Grass shapes</h2><button id="select-all" type="button">Select all</button></div><div id="variants"></div><p class="hint" id="selection-count"></p></section>
+        <section><h2>Shape & coverage</h2><div id="shape-controls"></div></section>
+        <section><h2>Color & light</h2><div class="colors"><label>Roots<input id="colorBase" type="color"></label><label>Tips<input id="colorTip" type="color"></label><label>Ground<input id="groundColor" type="color" value="#667c46"></label></div><div id="light-controls"></div></section>
+        <section><h2>Wind</h2><div id="wind-controls"></div></section>
+        <div class="actions"><button id="export" class="primary" type="button">Export settings</button><button id="import" type="button">Import settings</button><button id="reset" type="button">Reset</button></div>
+        <input id="import-file" type="file" accept="application/json,.json" hidden>
+      </fieldset>
+      <p id="notice" role="status"></p>
+      <footer>Two methods · one reusable grass module<br><a href="https://github.com/ekatober/grass-shader-playground" target="_blank" rel="noreferrer">Source on GitHub</a> · MIT · masks CC0</footer>
+    </aside>
+  </main>
+  <script type="module">
+    import('./demo.js').catch(error => {
+      const message = document.getElementById('loading');
+      message.textContent = 'Could not open the preview. Serve this folder over HTTP and check your internet connection. ' + error.message;
+      message.classList.add('error');
+      console.error(error);
+    });
+  </script>
+</body>
+</html>
