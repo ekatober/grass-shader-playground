@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painted terrain · Grass techniques</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../demo.css">
+  <style>main{grid-template-columns:1fr}@media(max-width:800px){#preview{height:100dvh}}</style>
+  <script type="importmap">
+  {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}
+  </script>
+</head>
+<body>
+  <main>
+    <section id="preview" aria-label="Painted terrain preview">
+      <div class="preview-top"><span class="eyebrow">GRASS TECHNIQUE / PAINTED TERRAIN</span><div class="view-switch"><button id="perspective" aria-pressed="false">Perspective</button><button id="isometric" aria-pressed="true">Isometric</button></div></div>
+      <div id="loading" role="status">Loading…</div>
+      <div class="preview-bottom"><span>Tiling texture on the ground · no grass geometry · <span id="fps"></span></span><span id="camera-help"></span></div>
+    </section>
+  </main>
+  <script type="module">
+    import * as THREE from 'three';
+    import { setup, AREA, COLORS } from './common.js';
+
+    // A tiling grass texture painted onto the ground: color blotches plus short,
+    // mostly diagonal strokes. No geometry above the ground at all.
+    const { scene } = setup({ ground: false });
+
+    let seed = 7;
+    const random = () => (seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / 4294967296;
+    const size = 1024;
+    const canvas = Object.assign(document.createElement('canvas'), { width: size, height: size });
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = COLORS.ground;
+    ctx.fillRect(0, 0, size, size);
+    const wrapped = draw => { for (const dx of [-size, 0, size]) for (const dy of [-size, 0, size]) draw(dx, dy); };
+    const palette = ['#4b6634', '#52713a', '#6f8b45', '#8ea256', '#b3bf64'];
+    for (let i = 0; i < 90; i++) {           // soft color patches
+      const x = random() * size, y = random() * size, r = 30 + random() * 90;
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = palette[Math.floor(random() * 3)];
+      wrapped((dx, dy) => { ctx.beginPath(); ctx.arc(x + dx, y + dy, r, 0, Math.PI * 2); ctx.fill(); });
+    }
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 5200; i++) {         // directional marks
+      const x = random() * size, y = random() * size;
+      const angle = -0.95 + (random() - 0.5) * 0.45;
+      const length = 9 + random() * 20;
+      ctx.globalAlpha = 0.55 + random() * 0.4;
+      ctx.strokeStyle = palette[Math.floor(random() * palette.length)];
+      ctx.lineWidth = 1.5 + random() * 2.5;
+      wrapped((dx, dy) => {
+        ctx.beginPath();
+        ctx.moveTo(x + dx, y + dy);
+        ctx.lineTo(x + dx + Math.cos(angle) * length, y + dy + Math.sin(angle) * length);
+        ctx.stroke();
+      });
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(AREA / 4, AREA / 4);  // one tile every 4 units
+    texture.anisotropy = 8;
+    const ground = new THREE.Mesh(
+      new THREE.CircleGeometry(AREA / 2, 96).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ map: texture }),
+    );
+    scene.add(ground);
+  </script>
+</body>
+</html>

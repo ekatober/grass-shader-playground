@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shell texturing · Grass techniques</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../demo.css">
+  <style>main{grid-template-columns:1fr}@media(max-width:800px){#preview{height:100dvh}}</style>
+  <script type="importmap">
+  {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}
+  </script>
+</head>
+<body>
+  <main>
+    <section id="preview" aria-label="Shell texturing preview">
+      <div class="preview-top"><span class="eyebrow">GRASS TECHNIQUE / SHELL TEXTURING</span><div class="view-switch"><button id="perspective" aria-pressed="false">Perspective</button><button id="isometric" aria-pressed="true">Isometric</button></div></div>
+      <div id="loading" role="status">Loading…</div>
+      <div class="preview-bottom"><span>24 stacked layers · 1 draw · <span id="fps"></span></span><span id="camera-help"></span></div>
+    </section>
+  </main>
+  <script type="module">
+    import * as THREE from 'three';
+    import { setup, AREA, COLORS } from './common.js';
+
+    // Shell texturing: LAYERS copies of the ground disc stacked upward. Each layer
+    // discards pixels whose strand is shorter than the layer's height, so the
+    // pixels that survive across layers line up into strands.
+    const { scene, onFrame } = setup();
+    const LAYERS = 24, HEIGHT = 0.55, STRANDS_PER_UNIT = 14;
+
+    const material = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+        uBase: { value: new THREE.Color(COLORS.base) },
+        uTip: { value: new THREE.Color(COLORS.tip) },
+      },
+      vertexShader: `
+        attribute float layer;
+        uniform float uTime;
+        varying vec2 vXZ;
+        varying float vH;
+        void main() {
+          vH = layer;
+          vec3 p = position;
+          p.y += layer * ${HEIGHT.toFixed(3)};
+          // the whole stack sways: higher layers slide further downwind
+          float sway = sin(uTime * 1.3 + p.x * 0.35 + p.z * 0.15) * 0.5 + 0.3;
+          p.x += sway * 0.12 * layer * layer;
+          vXZ = position.xz;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+        }`,
+      fragmentShader: `
+        uniform vec3 uBase, uTip;
+        varying vec2 vXZ;
+        varying float vH;
+        float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        void main() {
+          vec2 cell = vXZ * ${STRANDS_PER_UNIT.toFixed(1)};
+          vec2 id = floor(cell);
+          float strand = mix(0.35, 1.0, hash(id));
+          // strands are round and taper toward the top
+          float radius = 0.5 * (1.0 - vH / strand);
+          if (vH > strand || length(fract(cell) - 0.5) > radius) discard;
+          float ao = mix(0.55, 1.0, vH);
+          vec3 col = mix(uBase, uTip, vH) * ao * (0.9 + hash(id + 3.1) * 0.2);
+          gl_FragColor = vec4(col, 1.0);
+          #include <colorspace_fragment>
+        }`,
+    });
+
+    // One draw: all layers merged into a single geometry with a per-vertex layer value.
+    const disc = new THREE.CircleGeometry(AREA / 2, 96).rotateX(-Math.PI / 2);
+    const count = disc.attributes.position.count;
+    const positions = new Float32Array(count * 3 * LAYERS);
+    const layers = new Float32Array(count * LAYERS);
+    const index = [];
+    const source = disc.index.array;
+    for (let l = 0; l < LAYERS; l++) {
+      positions.set(disc.attributes.position.array, l * count * 3);
+      layers.fill((l + 1) / LAYERS, l * count, (l + 1) * count);
+      for (const i of source) index.push(i + l * count);
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('layer', new THREE.BufferAttribute(layers, 1));
+    geometry.setIndex(index);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.frustumCulled = false;
+    scene.add(mesh);
+    onFrame(t => { material.uniforms.uTime.value = t; });
+  </script>
+</body>
+</html>

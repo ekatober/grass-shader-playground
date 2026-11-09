@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Raymarched grass · Grass techniques</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../demo.css">
+  <style>main{grid-template-columns:1fr}@media(max-width:800px){#preview{height:100dvh}}</style>
+  <script type="importmap">
+  {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}
+  </script>
+</head>
+<body>
+  <main>
+    <section id="preview" aria-label="Raymarched grass preview">
+      <div class="preview-top"><span class="eyebrow">GRASS TECHNIQUE / RAYMARCHING</span><div class="view-switch"><button id="perspective" aria-pressed="false">Perspective</button><button id="isometric" aria-pressed="true">Isometric</button></div></div>
+      <div id="loading" role="status">Loading…</div>
+      <div class="preview-bottom"><span>SDF blades in one fullscreen quad · up to 96 steps per pixel · <span id="fps"></span></span><span id="camera-help"></span></div>
+    </section>
+  </main>
+  <script type="module">
+    import * as THREE from 'three';
+    import { setup, AREA, COLORS } from './common.js';
+
+    // Raymarched grass: one fullscreen triangle pair. For every pixel the shader
+    // builds the camera ray, then steps through a slab above the ground, testing a
+    // signed-distance function of blades repeated on a grid. No grass geometry.
+    const { scene, onFrame } = setup({ ground: false });
+
+    const uniforms = {
+      uTime: { value: 0 },
+      uInvViewProj: { value: new THREE.Matrix4() },
+      uBackground: { value: new THREE.Color(COLORS.background) },
+      uGround: { value: new THREE.Color(COLORS.ground) },
+      uBase: { value: new THREE.Color(COLORS.base) },
+      uTip: { value: new THREE.Color(COLORS.tip) },
+    };
+    const material = new THREE.ShaderMaterial({
+      uniforms, depthTest: false, depthWrite: false,
+      vertexShader: `
+        varying vec2 vNdc;
+        void main() { vNdc = position.xy; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+      fragmentShader: `
+        uniform float uTime;
+        uniform mat4 uInvViewProj;
+        uniform vec3 uBackground, uGround, uBase, uTip;
+        varying vec2 vNdc;
+        const float CELL = 0.22, TOP = 0.75, RADIUS = ${(AREA / 2).toFixed(1)};
+        float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+
+        // distance to the blade in this grid cell; h returns blade height there
+        float blade(vec3 p, out float h) {
+          vec2 id = floor(p.xz / CELL);
+          vec2 local = (fract(p.xz / CELL) - 0.5) * CELL;
+          local -= (vec2(hash(id), hash(id + 7.3)) - 0.5) * CELL * 0.5;   // jitter
+          h = TOP * mix(0.5, 1.0, hash(id + 1.7));
+          float y = clamp(p.y / h, 0.0, 1.0);
+          float sway = 0.18 + 0.12 * sin(uTime * 1.3 + id.x * 0.08 + id.y * 0.03);
+          local.x -= sway * h * y * y;                                    // bend toward the tip
+          float width = 0.035 * (1.0 - y);                                // taper to a point
+          float d = length(vec2(local.x, local.y * 2.5)) - width;
+          return max(d, p.y - h);
+        }
+
+        void main() {
+          vec4 a = uInvViewProj * vec4(vNdc, -1.0, 1.0);
+          vec4 b = uInvViewProj * vec4(vNdc, 1.0, 1.0);
+          vec3 ro = a.xyz / a.w, rd = normalize(b.xyz / b.w - ro);
+          vec3 col = uBackground;
+          if (rd.y < 0.0) {
+            // start where the ray enters the slab above the grass
+            float tTop = (TOP - ro.y) / rd.y, tGround = -ro.y / rd.y;
+            float t = max(tTop, 0.0);
+            vec3 hitGround = ro + rd * tGround;
+            bool hit = false;
+            float h = 0.0;
+            vec3 p;
+            for (int i = 0; i < 96; i++) {
+              p = ro + rd * t;
+              if (t > tGround) break;
+              float d = blade(p, h);
+              if (d < 0.002) { hit = true; break; }
+              t += max(d * 0.6, 0.004);              // small steps: neighbours are not tested
+            }
+            if (hit && length(p.xz) < RADIUS) {
+              float y = clamp(p.y / h, 0.0, 1.0);
+              col = mix(uBase, uTip, y) * mix(0.6, 1.0, y);
+            } else if (length(hitGround.xz) < RADIUS) {
+              col = uGround;
+            }
+          }
+          gl_FragColor = vec4(col, 1.0);
+          #include <colorspace_fragment>
+        }`,
+    });
+    const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+    quad.frustumCulled = false;
+    scene.add(quad);
+    onFrame((t, camera) => {
+      uniforms.uTime.value = t;
+      camera.updateMatrixWorld();
+      uniforms.uInvViewProj.value.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse).invert();
+    });
+  </script>
+</body>
+</html>

@@ -27,6 +27,10 @@ Choose **Painted cards** or **Geometric blades**. In perspective view, drag to o
 
 Counts refer to cards or individual mesh blades, respectively. A card can depict multiple blades, so equal counts are not equal visual density. FPS is a live preview reading, not a universal performance comparison.
 
+## Other techniques
+
+`techniques/` has three small standalone pages for methods the playground does not compare, using the same cameras and colors: painted terrain (`painted-terrain.html`, a tiling texture with directional marks), shell texturing (`shells.html`, 24 stacked layers with noise cutouts) and raymarched grass (`raymarch.html`, signed-distance blades in a fullscreen quad). They are deliberately simple illustrations, not production implementations. Add `?view=perspective` to open them in the perspective camera.
+
 ## Use the module
 
 Use Three.js 0.186.1 with `WebGLRenderer`; GLSL `ShaderMaterial` does not run in `WebGPURenderer`. The demo and module use the same shaders and geometry.
