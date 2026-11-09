@@ -23,13 +23,13 @@ python3 -m http.server 8766 --bind 127.0.0.1
 
 Open http://127.0.0.1:8766/. The demo imports Three.js 0.186.1 and OrbitControls from jsDelivr, so its first load needs an internet connection. Opening the HTML directly as a file is not supported.
 
-Choose **Painted cards** or **Geometric blades**. In perspective view, drag to orbit. In isometric view, drag to pan. Scroll or pinch to zoom. **Reset** restores defaults for the selected method. **Export settings** saves the selected method, its parameters, ground color and camera type; **Import settings** restores that file. No settings are uploaded or saved remotely.
+Choose **Painted cards** or **Geometric blades**. The preview opens in perspective; drag to orbit. Switch to isometric to see the grass from a top-down game camera; there, drag to pan. Scroll or pinch to zoom. **Reset** restores defaults for the selected method. **Export settings** saves the selected method, its parameters, ground color and camera type; **Import settings** restores that file. No settings are uploaded or saved remotely.
 
 Counts refer to cards or individual mesh blades, respectively. A card can depict multiple blades, so equal counts are not equal visual density. FPS is a live preview reading, not a universal performance comparison.
 
 ## Other techniques
 
-`techniques/` has three small standalone pages for methods the playground does not compare, using the same cameras and colors: painted terrain (`painted-terrain.html`, a tiling texture with directional marks), shell texturing (`shells.html`, 24 stacked layers with noise cutouts) and raymarched grass (`raymarch.html`, signed-distance blades in a fullscreen quad). They are deliberately simple illustrations, not production implementations. Add `?view=perspective` to open them in the perspective camera.
+`techniques/` has three small standalone pages for methods the playground does not compare, using the same cameras and colors: painted terrain (`painted-terrain.html`, a tiling texture with directional marks), shell texturing (`shells.html`, 24 stacked layers with noise cutouts) and raymarched grass (`raymarch.html`, signed-distance blades in a fullscreen quad). They are deliberately simple illustrations, not production implementations. Add `?view=isometric` to open them in the isometric camera.
 
 ## Use the module
 

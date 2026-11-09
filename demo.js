@@ -13,9 +13,9 @@ preview.prepend(renderer.domElement);
 
 const perspective = new THREE.PerspectiveCamera(45, 1, 0.1, 500);
 const isometric = new THREE.OrthographicCamera(-15, 15, 15, -15, 0.1, 500);
-let camera = isometric;
+let camera = perspective;
 let controls;
-let view = 'isometric';
+let view = 'perspective';
 let measuredFPS = 0;
 const ground = new THREE.Mesh(
   new THREE.CircleGeometry(1, 96).rotateX(-Math.PI / 2),
@@ -180,7 +180,7 @@ $('reset').onclick = () => {
   $('groundColor').value = '#667c46';
   ground.material.color.set($('groundColor').value);
   syncControls();
-  setView('isometric');
+  setView('perspective');
   $('notice').textContent = 'Defaults restored for this method.';
 };
 $('export').onclick = () => {
@@ -212,7 +212,7 @@ $('import-file').onchange = async event => {
     $('groundColor').value = color;
     ground.material.color.set(color);
     syncControls();
-    setView(preset.preview?.view === 'perspective' ? 'perspective' : 'isometric');
+    setView(preset.preview?.view === 'isometric' ? 'isometric' : 'perspective');
     $('notice').textContent = 'Settings imported.';
   } catch (error) {
     $('notice').textContent = 'Could not import settings. ' + error.message;
@@ -221,7 +221,7 @@ $('import-file').onchange = async event => {
 };
 
 syncControls();
-setView('isometric');
+setView('perspective');
 new ResizeObserver(resize).observe(preview);
 await grass.init();
 syncControls();

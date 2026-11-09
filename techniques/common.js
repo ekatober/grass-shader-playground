@@ -21,7 +21,7 @@ export function setup({ ground = true } = {}) {
 
   const perspective = new THREE.PerspectiveCamera(45, 1, 0.1, 500);
   const isometric = new THREE.OrthographicCamera(-15, 15, 15, -15, 0.1, 500);
-  const state = { camera: isometric, controls: null, view: 'isometric' };
+  const state = { camera: perspective, controls: null, view: 'perspective' };
 
   if (ground) {
     const disc = new THREE.Mesh(
@@ -73,7 +73,7 @@ export function setup({ ground = true } = {}) {
 
   for (const name of ['perspective', 'isometric']) $(name).onclick = () => setView(name);
   new ResizeObserver(resize).observe(preview);
-  setView(new URLSearchParams(location.search).get('view') === 'perspective' ? 'perspective' : 'isometric');
+  setView(new URLSearchParams(location.search).get('view') === 'isometric' ? 'isometric' : 'perspective');
 
   const callbacks = [];
   let previous = performance.now(), elapsed = 0, frames = 0, sampleStart = previous;
